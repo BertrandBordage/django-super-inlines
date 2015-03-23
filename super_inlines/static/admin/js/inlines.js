@@ -33,74 +33,82 @@
     var options = $.extend({}, $.fn.formset.defaults, opts);
     var $parent = this.parent();
     var $totalForms = $("#id_" + options.prefix + "-TOTAL_FORMS").prop("autocomplete", "off");
-    var nextIndex = parseInt($totalForms.val(), 10);
+    var nextIndex = parseInt($totalForms.val());
     var $maxForms = $("#id_" + options.prefix + "-MAX_NUM_FORMS").prop("autocomplete", "off");
+    function canShowAddButton() {
+      return ($maxForms.val() === '') || ($maxForms.val()-$totalForms.val()) > 0;
+    }
     // only show the add button if we are allowed to add more items,
         // note that max_num = None translates to a blank string.
-    var showAddButton = $maxForms.val() === '' || ($maxForms.val()-$totalForms.val()) > 0;
-    this.each(function() {
-      $(this).not("." + options.emptyCssClass).addClass(options.formCssClass);
-    });
-    if (this.length && showAddButton) {
-      var $addButton;
+    this.not("." + options.emptyCssClass).addClass(options.formCssClass);
+    if (this.length && canShowAddButton()) {
+      var $buttonContainer;
+      var $addButton = $('<a href="javascript:void(0)">' + options.addText + '</a>');
       if (this.is('tr')) {
-        // If forms are laid out as table rows, insert the
+        // If forms are laid out as table rows, create the
         // "add" button in a new table row:
         var numCols = this.last().children().length;
-        $parent.append('<tr class="' + options.addCssClass + '"><td colspan="' + numCols + '"><a href="javascript:void(0)">' + options.addText + "</a></tr>");
-        $addButton = $parent.find("tr:last a");
+        $buttonContainer = $('<tr class="' + options.addCssClass + '"><td colspan="' + numCols + '"></td></tr>');
+        $buttonContainer.find('td').append($addButton);
       } else {
-        // Otherwise, insert it immediately after the last form:
-        this.last().after('<div class="' + options.addCssClass + '"><a href="javascript:void(0)">' + options.addText + "</a></div>");
-        $addButton = this.last().next().find("a");
+        // Otherwise, create it immediately after the last form:
+        $buttonContainer = $('<div class="' + options.addCssClass + '"></div>');
+        $buttonContainer.append($addButton);
       }
+      $parent.append($buttonContainer);  // Inserts the button.
+
       $addButton.click(function(e) {
         e.preventDefault();
-        var $totalForms = $("#id_" + options.prefix + "-TOTAL_FORMS");
         var $template = $("#" + options.prefix + "-empty");
         var $row = $template.clone(true);
         $row.removeClass(options.emptyCssClass)
           .addClass(options.formCssClass)
           .attr("id", options.prefix + "-" + nextIndex);
+        var $removeButton = $('<a class="' + options.deleteCssClass +'" href="javascript:void(0)">' + options.deleteText + '</a>');
+        var $buttonContainer;
         if ($row.is('tr')) {
           // If the forms are laid out in table rows, insert
           // the remove button into the last table cell:
-          $row.children(":last").append('<div><a class="' + options.deleteCssClass +'" href="javascript:void(0)">' + options.deleteText + "</a></div>");
+          $buttonContainer = $('<div></div>');
+          $row.children(":last").append($buttonContainer);
         } else if ($row.is('ul, ol')) {
           // If they're laid out as an ordered/unordered list,
           // insert an <li> after the last list item:
-          $row.append('<li><a class="' + options.deleteCssClass +'" href="javascript:void(0)">' + options.deleteText + "</a></li>");
+          $buttonContainer = $('<li></li>');
+          $row.append($buttonContainer);
         } else {
           // Otherwise, just insert the remove button as the
           // last child element of the form's container:
-          $row.children(":first").append('<span><a class="' + options.deleteCssClass + '" href="javascript:void(0)">' + options.deleteText + "</a></span>");
+          $buttonContainer = $('<span></span>');
+          $row.children(":first").append($buttonContainer);
         }
+        $buttonContainer.append($removeButton);
         fillAttrPlaceholders($row.find("*"), options.prefix, $totalForms.val());
         // Insert the new form when it has been fully edited
-        $row.insertBefore($template);
+        $template.before($row);
         // Update number of total forms
-        $totalForms.val(parseInt($totalForms.val(), 10) + 1);
+        $totalForms.val(parseInt($totalForms.val()) + 1);
         nextIndex += 1;
         // Hide add button in case we've hit the max, except we want to add infinitely
-        if (($maxForms.val() !== '') && ($maxForms.val()-$totalForms.val()) <= 0) {
+        if (!canShowAddButton()) {
           $addButton.parent().hide();
         }
         // The delete button of each row triggers a bunch of other things
-        $row.find("a." + options.deleteCssClass).click(function(e) {
+        $removeButton.click(function(e) {
           e.preventDefault();
           // Remove the parent form containing this button:
-          var row = $(this).parents("." + options.formCssClass);
-          row.remove();
+          var $row = $(this).parents("." + options.formCssClass);
+          $row.remove();
           nextIndex -= 1;
           // If a post-delete callback was provided, call it with the deleted form:
           if (options.removed) {
-            options.removed(row);
+            options.removed($row);
           }
           // Update the TOTAL_FORMS form count.
           var $forms = $("." + options.formCssClass);
-          $("#id_" + options.prefix + "-TOTAL_FORMS").val($forms.length);
+          $totalForms.val($forms.length);
           // Show add button again once we drop below max
-          if (($maxForms.val() === '') || ($maxForms.val()-$forms.length) > 0) {
+          if (canShowAddButton()) {
             $addButton.parent().show();
           }
           // Also, fill placeholders in attributes
@@ -163,15 +171,14 @@
 
     var initPrepopulatedFields = function($row) {
       $row.find('.prepopulated_field').each(function() {
-        var field = $(this),
-            input = field.find('input, select, textarea'),
-            dependency_list = input.data('dependency_list') || [],
+        var $input = $(this).find('input, select, textarea'),
+            dependency_list = $input.data('dependency_list') || [],
             dependencies = [];
         $.each(dependency_list, function(i, field_name) {
           dependencies.push('#' + $row.find('.field-' + field_name).find('input, select, textarea').attr('id'));
         });
         if (dependencies.length) {
-          input.prepopulate(dependencies, input.attr('maxlength'));
+          $input.prepopulate(dependencies, $input.attr('maxlength'));
         }
       });
     };
@@ -200,21 +207,21 @@
     var rowsSelector = this.selector;
     var updateInlineLabel = function() {
       $(rowsSelector).find(".inline_label").each(function(i) {
-        $(this).html($(this).html().replace(/(#\d+)/g, "#" + (i + 1)));
+        var $row = $(this);
+        $row.html($row.html().replace(/(#\d+)/g, "#" + (i + 1)));
       });
     };
 
     var initPrepopulatedFields = function($row) {
       $row.find('.prepopulated_field').each(function() {
-        var field = $(this),
-            input = field.find('input, select, textarea'),
-            dependency_list = input.data('dependency_list') || [],
+        var $input = $(this).find('input, select, textarea'),
+            dependency_list = $input.data('dependency_list') || [],
             dependencies = [];
         $.each(dependency_list, function(i, field_name) {
           dependencies.push('#' + $row.find('.form-row .field-' + field_name).find('input, select, textarea').attr('id'));
         });
         if (dependencies.length) {
-          input.prepopulate(dependencies, input.attr('maxlength'));
+          $input.prepopulate(dependencies, $input.attr('maxlength'));
         }
       });
     };
