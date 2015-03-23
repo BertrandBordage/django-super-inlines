@@ -137,6 +137,20 @@
     removed: null          // Function called each time a form is deleted
   };
 
+  function initPrepopulatedFields($row) {
+    $row.find('.prepopulated_field').each(function() {
+      var $input = $(this).find('input, select, textarea'),
+          dependency_list = $input.data('dependency_list') || [],
+          dependencies = [];
+      $.each(dependency_list, function(i, field_name) {
+        dependencies.push('#' + $row.find('.field-' + field_name).find('input, select, textarea').attr('id'));
+      });
+      if (dependencies.length) {
+        $input.prepopulate(dependencies, $input.attr('maxlength'));
+      }
+    });
+  }
+
   function reinitDateTimeShortCuts() {
     // Reinitialize the calendar and clock widgets by force
     if (typeof DateTimeShortcuts != 'undefined') {
@@ -169,20 +183,6 @@
         .filter(":odd").addClass("row2");
     };
 
-    var initPrepopulatedFields = function($row) {
-      $row.find('.prepopulated_field').each(function() {
-        var $input = $(this).find('input, select, textarea'),
-            dependency_list = $input.data('dependency_list') || [],
-            dependencies = [];
-        $.each(dependency_list, function(i, field_name) {
-          dependencies.push('#' + $row.find('.field-' + field_name).find('input, select, textarea').attr('id'));
-        });
-        if (dependencies.length) {
-          $input.prepopulate(dependencies, $input.attr('maxlength'));
-        }
-      });
-    };
-
     this.formset({
       prefix: options.prefix,
       addText: options.addText,
@@ -209,20 +209,6 @@
       $(rowsSelector).find(".inline_label").each(function(i) {
         var $row = $(this);
         $row.html($row.html().replace(/(#\d+)/g, "#" + (i + 1)));
-      });
-    };
-
-    var initPrepopulatedFields = function($row) {
-      $row.find('.prepopulated_field').each(function() {
-        var $input = $(this).find('input, select, textarea'),
-            dependency_list = $input.data('dependency_list') || [],
-            dependencies = [];
-        $.each(dependency_list, function(i, field_name) {
-          dependencies.push('#' + $row.find('.form-row .field-' + field_name).find('input, select, textarea').attr('id'));
-        });
-        if (dependencies.length) {
-          $input.prepopulate(dependencies, $input.attr('maxlength'));
-        }
       });
     };
 
