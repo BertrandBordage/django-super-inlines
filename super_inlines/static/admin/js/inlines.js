@@ -43,7 +43,7 @@
     this.not("." + options.emptyCssClass).addClass(options.formCssClass);
     if (this.length && canShowAddButton()) {
       var $buttonContainer;
-      var $addButton = $('<a href="javascript:void(0)">' + options.addText + '</a>');
+      var $addButton = $('<a href="#">' + options.addText + '</a>');
       if (this.is('tr')) {
         // If forms are laid out as table rows, create the
         // "add" button in a new table row:
@@ -64,7 +64,7 @@
         $row.removeClass(options.emptyCssClass)
           .addClass(options.formCssClass)
           .attr("id", options.prefix + "-" + nextIndex);
-        var $removeButton = $('<a class="' + options.deleteCssClass +'" href="javascript:void(0)">' + options.deleteText + '</a>');
+        var $removeButton = $('<a class="' + options.deleteCssClass +'" href="#">' + options.deleteText + '</a>');
         var $buttonContainer;
         if ($row.is('tr')) {
           // If the forms are laid out in table rows, insert
