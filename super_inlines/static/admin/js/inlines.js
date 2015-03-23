@@ -113,7 +113,9 @@
           }
           // Also, fill placeholders in attributes
           // for all remaining form controls so they remain in sequence:
-          fillAttrPlaceholders($forms.find('*').addBack(), options.prefix, i);
+          $forms.each(function(i) {
+            fillAttrPlaceholders($(this).find('*').addBack(), options.prefix, i);
+          });
         });
         // If a post-add callback was supplied, call it with the added form:
         if (options.added) {
