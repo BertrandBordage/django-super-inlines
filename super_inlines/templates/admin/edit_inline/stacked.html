@@ -14,7 +14,7 @@
 
     {% for inline_admin_form in inline_admin_formset %}
       {% with original=inline_admin_form.original model_admin=inline_admin_form.model_admin %}
-        <div class="inline-related{% if original or inline_admin_form.show_url %} has_original{% endif %}{% if forloop.last %} empty-form last-related{% endif %}">
+        <div class="inline-related{% if original or inline_admin_form.show_url %} has_original{% endif %}{% if forloop.last %} empty-form{% endif %}">
           <h3>
             <b>{{ inline.verbose_name|capfirst }}:</b>
             <span class="inline_label">
