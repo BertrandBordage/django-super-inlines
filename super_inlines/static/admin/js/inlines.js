@@ -144,10 +144,11 @@
   }
 
   InlineFormSet.prototype.getFormsAndTemplate = function() {
-    if (this.inlineType == 'stacked') {
-      return this.$root.find('> .inline-related');
+    var $rows = this.$root.find('> .inline-related');
+    if (this.inlineType == 'tabular') {
+      return $rows.find('> fieldset > table > tbody > .form-row');
     }
-    return this.$root.find('> .inline-related > fieldset > table > tbody > .form-row');
+    return $rows;
   };
 
   InlineFormSet.prototype.getForms = function() {
