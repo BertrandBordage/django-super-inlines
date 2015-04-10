@@ -36,15 +36,11 @@
     this.$removeButton = $('<a class="' + this.formset.removeCssClass +'" href="#">' + this.formset.removeText + '</a>');
 
     if (this.formset.inlineType == 'tabular') {
-      // If the forms are laid out in table rows, insert
-      // the remove button into the last table cell:
       this.$removeButtonContainer = $('<div></div>');
-      this.$row.children(":last").append(this.$removeButtonContainer);
+      this.$row.children(':last').append(this.$removeButtonContainer);
     } else {
-      // Otherwise, just insert the remove button as the
-      // last child element of the form's container:
       this.$removeButtonContainer = $('<span></span>');
-      this.$row.children(":first").append(this.$removeButtonContainer);
+      this.$row.children(':first').append(this.$removeButtonContainer);
     }
 
     this.$removeButtonContainer.append(this.$removeButton);
@@ -75,7 +71,7 @@
 
   InlineForm.prototype.fillAttrPlaceholders = function() {
     var $elements = this.$row.find('*').addBack();
-    var idRegex = new RegExp("(" + this.formset.prefix + "-(?:\\d+|__prefix__))");
+    var idRegex = new RegExp('(' + this.formset.prefix + '-(?:\\d+|__prefix__))');
     var rowName = this.formset.prefix + '-' + this.index;
     $.each(['for', 'id', 'name'], function(i, attrName) {
       $elements.each(function() {
@@ -109,21 +105,18 @@
     this.addText = this.$root.data('add-text');
     this.removeText = this.$root.data('remove-text');
 
-    this.$totalForms = this.$root.find('[name="' + this.prefix + '-TOTAL_FORMS"]').attr("autocomplete", "off");
-    this.$maxForms = this.$root.find('[name="' + this.prefix + '-MAX_NUM_FORMS"]').attr("autocomplete", "off");
+    this.$totalForms = this.$root.find('[name="' + this.prefix + '-TOTAL_FORMS"]').attr('autocomplete', 'off');
+    this.$maxForms = this.$root.find('[name="' + this.prefix + '-MAX_NUM_FORMS"]').attr('autocomplete', 'off');
 
     this.$templateForm = this.getFormsAndTemplate().filter('.' + this.emptyCssClass);
 
     this.$addButton = $('<a href="#">' + this.addText + '</a>');
 
     if (this.inlineType == 'tabular') {
-      // If forms are laid out as table rows, create the
-      // "add" button in a new table row:
       var numCols = this.$templateForm.children().length;
       this.$addButtonContainer = $('<tr class="' + this.addCssClass + '"><td colspan="' + numCols + '"></td></tr>');
       this.$addButtonContainer.find('td').append(this.$addButton);
     } else {
-      // Otherwise, create it immediately after the last form:
       this.$addButtonContainer = $('<div class="' + this.addCssClass + '"></div>');
       this.$addButtonContainer.append(this.$addButton);
     }
@@ -157,14 +150,13 @@
   };
 
   InlineFormSet.prototype.alternateRows = function() {
-    this.getForms().removeClass("row1 row2")
-      .filter(":even").addClass("row1").end()
-      .filter(":odd").addClass("row2");
+    this.getForms().removeClass('row1 row2')
+      .filter(':even').addClass('row1').end()
+      .filter(':odd').addClass('row2');
   };
 
   InlineFormSet.prototype.canShowAddButton = function() {
-    // only show the add button if we are allowed to add more items,
-    // note that max_num = None translates to a blank string.
+    // Note: if `max_num` is None, $maxForms.val() == ''
     return (this.$maxForms.val() === '')
             || (this.$maxForms.val()-this.$totalForms.val()) > 0;
   };
