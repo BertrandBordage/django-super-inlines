@@ -1,6 +1,7 @@
 # coding: utf-8
 
 from __future__ import unicode_literals
+from collections import defaultdict
 
 from django.contrib.admin import helpers
 from django.contrib.admin.options import InlineModelAdmin
@@ -35,14 +36,14 @@ class SuperInlineModelAdmin(InlineModelAdmin):
         "Helper function to generate formsets for add/change_view."
         formsets = []
         inline_instances = []
-        prefixes = {}
+        prefixes = defaultdict(int)
         get_formsets_args = [request]
         if change:
             get_formsets_args.append(obj)
         for FormSet, inline in self.get_formsets_with_inlines(
                 *get_formsets_args):
             prefix = FormSet.get_default_prefix()
-            prefixes[prefix] = prefixes.get(prefix, 0) + 1
+            prefixes[prefix] += 1
             if prefixes[prefix] != 1 or not prefix:
                 prefix = "%s-%s" % (prefix, prefixes[prefix])
             formset_params = {
