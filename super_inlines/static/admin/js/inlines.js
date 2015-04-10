@@ -33,7 +33,7 @@
   }
 
   InlineForm.prototype.createRemoveButton = function() {
-    this.$removeButton = $('<a class="' + this.formset.deleteCssClass +'" href="#">' + this.formset.deleteText + '</a>');
+    this.$removeButton = $('<a class="' + this.formset.removeCssClass +'" href="#">' + this.formset.removeText + '</a>');
 
     if (this.formset.inlineType == 'tabular') {
       // If the forms are laid out in table rows, insert
@@ -102,12 +102,12 @@
 
     this.prefix = this.$root.data('prefix');
     this.addCssClass = 'add-row';
-    this.deleteCssClass = 'inline-deletelink';
+    this.removeCssClass = 'inline-deletelink';
     this.emptyCssClass = 'empty-form';
     this.formCssClass = 'dynamic-' + this.prefix;
 
     this.addText = this.$root.data('add-text');
-    this.deleteText = this.$root.data('delete-text');
+    this.removeText = this.$root.data('remove-text');
 
     this.$totalForms = this.$root.find('[name="' + this.prefix + '-TOTAL_FORMS"]').attr("autocomplete", "off");
     this.$maxForms = this.$root.find('[name="' + this.prefix + '-MAX_NUM_FORMS"]').attr("autocomplete", "off");
@@ -180,10 +180,10 @@
       form.fillAttrPlaceholders();
     });
 
-    if (this.inlineType == 'stacked') {
-      this.updateLabels();
-    } else {
+    if (this.inlineType == 'tabular') {
       this.alternateRows();
+    } else {
+      this.updateLabels();
     }
 
     this.$totalForms.val(this.forms.length);

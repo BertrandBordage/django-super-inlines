@@ -1,7 +1,7 @@
 {% load i18n admin_urls admin_static admin_modify %}
 
 {% with inline=inline_admin_formset.opts formset=inline_admin_formset.formset %}
-  <div class="inline-group" id="{{ formset.prefix }}-group" data-inline-type="tabular" data-prefix="{{ formset.prefix }}" data-delete-text="{% trans "Remove" %}" data-add-text="{% blocktrans with verbose_name=inline.verbose_name|capfirst %}Add another {{ verbose_name }}{% endblocktrans %}">
+  <div class="inline-group" id="{{ formset.prefix }}-group" data-inline-type="tabular" data-prefix="{{ formset.prefix }}" data-remove-text="{% trans "Remove" %}" data-add-text="{% blocktrans with verbose_name=inline.verbose_name|capfirst %}Add another {{ verbose_name }}{% endblocktrans %}">
     <div class="tabular inline-related">
       {{ formset.management_form }}
       <fieldset class="module">
