@@ -40,11 +40,6 @@
       // the remove button into the last table cell:
       this.$removeButtonContainer = $('<div></div>');
       this.$row.children(":last").append(this.$removeButtonContainer);
-    } else if (this.$row.is('ul, ol')) {
-      // If they're laid out as an ordered/unordered list,
-      // insert an <li> after the last list item:
-      this.$removeButtonContainer = $('<li></li>');
-      this.$row.append(this.$removeButtonContainer);
     } else {
       // Otherwise, just insert the remove button as the
       // last child element of the form's container:
