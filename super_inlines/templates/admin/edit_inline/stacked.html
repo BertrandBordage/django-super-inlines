@@ -1,14 +1,20 @@
-{% load i18n admin_urls admin_static %}
+{% load i18n admin_urls admin_static super_inlines %}
+
+<style>
+  .inline-group .inline-group {
+    margin: 20px;
+  }
+</style>
 
 {% with inline=inline_admin_formset.opts formset=inline_admin_formset.formset %}
-  <div class="inline-group" id="{{ formset.prefix }}-group">
+  <div class="inline-group" id="{{ formset.prefix }}-group" data-inline-type="stacked" data-prefix="{{ formset.prefix }}" data-delete-text="{% trans "Remove" %}" data-add-text="{% blocktrans with verbose_name=inline.verbose_name|capfirst %}Add another {{ verbose_name }}{% endblocktrans %}">
     <h2>{{ inline.verbose_name_plural|capfirst }}</h2>
     {{ formset.management_form }}
     {{ formset.non_form_errors }}
 
     {% for inline_admin_form in inline_admin_formset %}
       {% with original=inline_admin_form.original model_admin=inline_admin_form.model_admin %}
-        <div class="inline-related{% if original or inline_admin_form.show_url %} has_original{% endif %}{% if forloop.last %} empty-form last-related{% endif %}" id="{{ formset.prefix }}-{% if forloop.last %}empty{% else %}{{ forloop.counter0 }}{% endif %}">
+        <div class="inline-related{% if original or inline_admin_form.show_url %} has_original{% endif %}{% if forloop.last %} empty-form last-related{% endif %}">
           <h3>
             <b>{{ inline.verbose_name|capfirst }}:</b>
             <span class="inline_label">
@@ -45,18 +51,22 @@
             {{ inline_admin_form.pk_field.field }}
           {% endif %}
           {{ inline_admin_form.fk_field.field }}
+
+          {% get_sub_inline_formsets inline as sub_inlines %}
+          {% for sub_inline in sub_inlines %}
+            {% include sub_inline.opts.template with inline_admin_formset=sub_inline is_subinline=True %}
+          {% endfor %}
+
         </div>
       {% endwith %}
     {% endfor %}
   </div>
 
-  <script type="text/javascript">
-    (function($) {
-      $("#{{ formset.prefix }}-group .inline-related").stackedFormset({
-        prefix: '{{ formset.prefix }}',
-        deleteText: "{% trans "Remove" %}",
-        addText: "{% blocktrans with verbose_name=inline.verbose_name|capfirst %}Add another {{ verbose_name }}{% endblocktrans %}"
-      });
-    })(django.jQuery);
-  </script>
+  {% if not is_subinline %}
+    <script type="text/javascript">
+      (function($) {
+        $("#{{ formset.prefix }}-group").formset();
+      })(django.jQuery);
+    </script>
+  {% endif %}
 {% endwith %}

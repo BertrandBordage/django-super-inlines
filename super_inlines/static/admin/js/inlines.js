@@ -17,135 +17,25 @@
 (function($) {
 
   function fillAttrPlaceholders($elements, prefix, index) {
-    var id_regex = new RegExp("(" + prefix + "-(\\d+|__prefix__))");
+    var idRegex = new RegExp("(" + prefix + "-(\\d+|__prefix__))");
     var replacement = prefix + "-" + index;
     $.each(['for', 'id', 'name'], function(i, attrName) {
       $elements.each(function() {
         var $el = $(this), attr = $el.attr(attrName);
         if (attr) {
-          $el.attr(attrName, attr.replace(id_regex, replacement));
+          $el.attr(attrName, attr.replace(idRegex, replacement));
         }
       });
     });
   }
-
-  $.fn.formset = function(opts) {
-    var options = $.extend({}, $.fn.formset.defaults, opts);
-    var $parent = this.parent();
-    var $totalForms = $("#id_" + options.prefix + "-TOTAL_FORMS").prop("autocomplete", "off");
-    var nextIndex = parseInt($totalForms.val());
-    var $maxForms = $("#id_" + options.prefix + "-MAX_NUM_FORMS").prop("autocomplete", "off");
-    function canShowAddButton() {
-      return ($maxForms.val() === '') || ($maxForms.val()-$totalForms.val()) > 0;
-    }
-    // only show the add button if we are allowed to add more items,
-        // note that max_num = None translates to a blank string.
-    this.not("." + options.emptyCssClass).addClass(options.formCssClass);
-    if (this.length && canShowAddButton()) {
-      var $buttonContainer;
-      var $addButton = $('<a href="#">' + options.addText + '</a>');
-      if (this.is('tr')) {
-        // If forms are laid out as table rows, create the
-        // "add" button in a new table row:
-        var numCols = this.last().children().length;
-        $buttonContainer = $('<tr class="' + options.addCssClass + '"><td colspan="' + numCols + '"></td></tr>');
-        $buttonContainer.find('td').append($addButton);
-      } else {
-        // Otherwise, create it immediately after the last form:
-        $buttonContainer = $('<div class="' + options.addCssClass + '"></div>');
-        $buttonContainer.append($addButton);
-      }
-      $parent.append($buttonContainer);  // Inserts the button.
-
-      $addButton.click(function(e) {
-        e.preventDefault();
-        var $template = $("#" + options.prefix + "-empty");
-        var $row = $template.clone(true);
-        $row.removeClass(options.emptyCssClass)
-          .addClass(options.formCssClass)
-          .attr("id", options.prefix + "-" + nextIndex);
-        var $removeButton = $('<a class="' + options.deleteCssClass +'" href="#">' + options.deleteText + '</a>');
-        var $buttonContainer;
-        if ($row.is('tr')) {
-          // If the forms are laid out in table rows, insert
-          // the remove button into the last table cell:
-          $buttonContainer = $('<div></div>');
-          $row.children(":last").append($buttonContainer);
-        } else if ($row.is('ul, ol')) {
-          // If they're laid out as an ordered/unordered list,
-          // insert an <li> after the last list item:
-          $buttonContainer = $('<li></li>');
-          $row.append($buttonContainer);
-        } else {
-          // Otherwise, just insert the remove button as the
-          // last child element of the form's container:
-          $buttonContainer = $('<span></span>');
-          $row.children(":first").append($buttonContainer);
-        }
-        $buttonContainer.append($removeButton);
-        fillAttrPlaceholders($row.find("*"), options.prefix, $totalForms.val());
-        // Insert the new form when it has been fully edited
-        $template.before($row);
-        // Update number of total forms
-        $totalForms.val(parseInt($totalForms.val()) + 1);
-        nextIndex += 1;
-        // Hide add button in case we've hit the max, except we want to add infinitely
-        if (!canShowAddButton()) {
-          $addButton.parent().hide();
-        }
-        // The delete button of each row triggers a bunch of other things
-        $removeButton.click(function(e) {
-          e.preventDefault();
-          // Remove the parent form containing this button:
-          var $row = $(this).parents("." + options.formCssClass);
-          $row.remove();
-          nextIndex -= 1;
-          // If a post-delete callback was provided, call it with the deleted form:
-          if (options.removed) {
-            options.removed($row);
-          }
-          // Update the TOTAL_FORMS form count.
-          var $forms = $("." + options.formCssClass);
-          $totalForms.val($forms.length);
-          // Show add button again once we drop below max
-          if (canShowAddButton()) {
-            $addButton.parent().show();
-          }
-          // Also, fill placeholders in attributes
-          // for all remaining form controls so they remain in sequence:
-          $forms.each(function(i) {
-            fillAttrPlaceholders($(this).find('*').addBack(), options.prefix, i);
-          });
-        });
-        // If a post-add callback was supplied, call it with the added form:
-        if (options.added) {
-          options.added($row);
-        }
-      });
-    }
-    return this;
-  };
-
-  /* Setup plugin defaults */
-  $.fn.formset.defaults = {
-    prefix: "form",          // The form prefix for your django formset
-    addText: "add another",      // Text for the add link
-    deleteText: "remove",      // Text for the delete link
-    addCssClass: "add-row",      // CSS class applied to the add link
-    deleteCssClass: "delete-row",  // CSS class applied to the delete link
-    emptyCssClass: "empty-row",    // CSS class applied to the empty row
-    formCssClass: "dynamic-form",  // CSS class applied to each form in a formset
-    added: null,          // Function called each time a new form is added
-    removed: null          // Function called each time a form is deleted
-  };
 
   function initPrepopulatedFields($row) {
     $row.find('.prepopulated_field').each(function() {
       var $input = $(this).find('input, select, textarea'),
           dependency_list = $input.data('dependency_list') || [],
           dependencies = [];
-      $.each(dependency_list, function(i, field_name) {
-        dependencies.push('#' + $row.find('.field-' + field_name).find('input, select, textarea').attr('id'));
+      $.each(dependency_list, function(i, fieldName) {
+        dependencies.push('#' + $row.find('.field-' + fieldName).find('input, select, textarea').attr('id'));
       });
       if (dependencies.length) {
         $input.prepopulate(dependencies, $input.attr('maxlength'));
@@ -176,60 +66,150 @@
     }
   }
 
-  // Tabular inlines ---------------------------------------------------------
-  $.fn.tabularFormset = function(options) {
-    var rowsSelector = this.selector;
-    var alternatingRows = function() {
-      $(rowsSelector).not(".add-row").removeClass("row1 row2")
+  $.fn.formset = function(opts) {
+    var options = $.extend({}, $.fn.formset.defaults, opts);
+    var $parent = this;
+    var inlineType = $parent.data('inline-type');
+    function getFormsIncludingEmpty() {
+      if (inlineType == 'stacked') {
+        return $parent.find('> .inline-related');
+      }
+      return $parent.find('> .inline-related > fieldset > table > tbody > .form-row');
+    }
+    function getForms() {
+      return getFormsIncludingEmpty().not('.' + options.emptyCssClass)
+    }
+
+    function alternatingRows() {
+      getForms().removeClass("row1 row2")
         .filter(":even").addClass("row1").end()
         .filter(":odd").addClass("row2");
-    };
-
-    this.formset({
-      prefix: options.prefix,
-      addText: options.addText,
-      formCssClass: "dynamic-" + options.prefix,
-      deleteCssClass: "inline-deletelink",
-      deleteText: options.deleteText,
-      emptyCssClass: "empty-form",
-      removed: alternatingRows,
-      added: function($row) {
-        initPrepopulatedFields($row);
-        reinitDateTimeShortCuts();
-        updateSelectFilter();
-        alternatingRows();
-      }
-    });
-
-    return this;
-  };
-
-  // Stacked inlines ---------------------------------------------------------
-  $.fn.stackedFormset = function(options) {
-    var rowsSelector = this.selector;
-    var updateInlineLabel = function() {
-      $(rowsSelector).find(".inline_label").each(function(i) {
-        var $row = $(this);
-        $row.html($row.html().replace(/(#\d+)/g, "#" + (i + 1)));
+    }
+    function updateInlineLabel() {
+      getForms().find('> h3 > .inline_label').each(function(i) {
+        var $rowLabel = $(this);
+        $rowLabel.html($rowLabel.html().replace(/(#\d+)/g, "#" + (i + 1)));
       });
-    };
+    }
 
-    this.formset({
-      prefix: options.prefix,
-      addText: options.addText,
-      formCssClass: "dynamic-" + options.prefix,
-      deleteCssClass: "inline-deletelink",
-      deleteText: options.deleteText,
-      emptyCssClass: "empty-form",
-      removed: updateInlineLabel,
-      added: (function($row) {
+    var prefix = $parent.data('prefix');
+    var formCssClass = 'dynamic-' + prefix;
+    var addText = $parent.data('add-text');
+    var deleteText = $parent.data('delete-text');
+    var $totalForms = $parent.find('[name="' + prefix + '-TOTAL_FORMS"]').attr("autocomplete", "off");
+    var nextIndex = parseInt($totalForms.val());
+    var $maxForms = $parent.find('[name="' + prefix + '-MAX_NUM_FORMS"]').attr("autocomplete", "off");
+    var $forms = getFormsIncludingEmpty();
+    var $template = $forms.filter('.' + options.emptyCssClass);
+    function canShowAddButton() {
+      // only show the add button if we are allowed to add more items,
+      // note that max_num = None translates to a blank string.
+      return ($maxForms.val() === '') || ($maxForms.val()-$totalForms.val()) > 0;
+    }
+    if ($forms.length && canShowAddButton()) {
+      var $buttonContainer;
+      var $addButton = $('<a href="#">' + addText + '</a>');
+      if (inlineType == 'tabular') {
+        // If forms are laid out as table rows, create the
+        // "add" button in a new table row:
+        var numCols = $template.children().length;
+        $buttonContainer = $('<tr class="' + options.addCssClass + '"><td colspan="' + numCols + '"></td></tr>');
+        $buttonContainer.find('td').append($addButton);
+        $parent.find('tbody').append($buttonContainer)
+      } else {
+        // Otherwise, create it immediately after the last form:
+        $buttonContainer = $('<div class="' + options.addCssClass + '"></div>');
+        $buttonContainer.append($addButton);
+        $parent.append($buttonContainer);
+      }
+
+      $addButton.click(function(e) {
+        e.preventDefault();
+        var $row = $template.clone(true);
+        $row.removeClass(options.emptyCssClass)
+          .addClass(formCssClass)
+          .attr("id", prefix + "-" + nextIndex);
+        var $removeButton = $('<a class="' + options.deleteCssClass +'" href="#">' + deleteText + '</a>');
+        var $buttonContainer;
+        if (inlineType == 'tabular') {
+          // If the forms are laid out in table rows, insert
+          // the remove button into the last table cell:
+          $buttonContainer = $('<div></div>');
+          $row.children(":last").append($buttonContainer);
+        } else if ($row.is('ul, ol')) {
+          // If they're laid out as an ordered/unordered list,
+          // insert an <li> after the last list item:
+          $buttonContainer = $('<li></li>');
+          $row.append($buttonContainer);
+        } else {
+          // Otherwise, just insert the remove button as the
+          // last child element of the form's container:
+          $buttonContainer = $('<span></span>');
+          $row.children(":first").append($buttonContainer);
+        }
+        $buttonContainer.append($removeButton);
+        fillAttrPlaceholders($row.find("*"), $row.parents('.inline-related').attr('id') + prefix, $totalForms.val());
+        // Insert the new form when it has been fully edited
+        if (inlineType == 'stacked') {
+          $(this).parent().prev().before($row);
+        } else {
+          $(this).parent().parent().parent().find('.' + options.emptyCssClass).before($row);
+        }
+        // Update number of total forms
+        $totalForms.val(parseInt($totalForms.val()) + 1);
+        nextIndex += 1;
+        // Hide add button in case we've hit the max, except we want to add infinitely
+        if (!canShowAddButton()) {
+          $addButton.parent().hide();
+        }
+        // The delete button of each row triggers a bunch of other things
+        $removeButton.click(function(e) {
+          e.preventDefault();
+          // Remove the parent form containing this button:
+          var $row = $(this).parents("." + formCssClass).first();
+          $row.remove();
+          nextIndex -= 1;
+
+          if (inlineType == 'stacked') {
+            updateInlineLabel();
+          } else {
+            alternatingRows();
+          }
+
+          // Update the TOTAL_FORMS form count.
+          var $forms = getForms();
+          $totalForms.val($forms.length);
+          // Show add button again once we drop below max
+          if (canShowAddButton()) {
+            $addButton.parent().show();
+          }
+          // Also, fill placeholders in attributes
+          // for all remaining form controls so they remain in sequence:
+          $forms.each(function(i) {
+            fillAttrPlaceholders($(this).find('*').addBack(), prefix, i);
+          });
+        });
+
         initPrepopulatedFields($row);
         reinitDateTimeShortCuts();
         updateSelectFilter();
-        updateInlineLabel();
-      })
-    });
+        if (inlineType == 'stacked') {
+          updateInlineLabel();
+        } else {
+          alternatingRows();
+        }
 
+        $row.find('.inline-group').formset();
+      });
+    }
     return this;
   };
+
+  /* Setup plugin defaults */
+  $.fn.formset.defaults = {
+    addCssClass: 'add-row',
+    deleteCssClass: 'inline-deletelink',
+    emptyCssClass: 'empty-form'
+  };
+
 })(django.jQuery);
