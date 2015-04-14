@@ -6,16 +6,20 @@
 
   function InlineForm(formset, $row) {
     this.formset = formset;
-    this.isInitial = (typeof $row !== 'undefined');
-    if (this.isInitial) {
-      this.$row = $row;
-    } else {
-      this.$row = this.formset.$templateForm.clone(true);
-    }
-
-    this.$row.removeClass(this.formset.emptyCssClass).addClass(this.formset.formCssClass);
     this.index = this.formset.forms.length;
+    this.prefix = this.formset.prefix + '-' + this.index;
     this.formset.forms.push(this);
+
+    if (typeof $row === 'undefined') {
+      this.$row = (this.formset.$templateForm.clone(true)
+                   .removeClass(this.formset.emptyCssClass)
+                   .addClass(this.formset.formCssClass));
+      this.isInitial = false;
+    } else {
+      this.$row = $row;
+      var $idInput = this.$row.find('[name="' + this.prefix + '"]');
+      this.isInitial = $idInput.val() === '';
+    }
 
     if (!this.isInitial) {
       this.createRemoveButton();
@@ -72,12 +76,12 @@
   InlineForm.prototype.fillAttrPlaceholders = function() {
     var $elements = this.$row.find('*').addBack();
     var idRegex = new RegExp('(' + this.formset.prefix + '-(?:\\d+|__prefix__))');
-    var rowName = this.formset.prefix + '-' + this.index;
+    var formPrefix = this.prefix;
     $.each(['for', 'id', 'name'], function(i, attrName) {
       $elements.each(function() {
         var $el = $(this), attr = $el.attr(attrName);
         if (attr) {
-          $el.attr(attrName, attr.replace(idRegex, rowName));
+          $el.attr(attrName, attr.replace(idRegex, formPrefix));
         }
       });
     });
