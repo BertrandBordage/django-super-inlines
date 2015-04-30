@@ -7,66 +7,68 @@
 </style>
 
 {% with inline=inline_admin_formset.opts formset=inline_admin_formset.formset %}
-  <div class="inline-group" id="{{ formset.prefix }}-group" data-inline-type="stacked" data-prefix="{{ formset.prefix }}" data-remove-text="{% trans "Remove" %}" data-add-text="{% blocktrans with verbose_name=inline.verbose_name|capfirst %}Add another {{ verbose_name }}{% endblocktrans %}">
-    <h2>{{ inline.verbose_name_plural|capfirst }}</h2>
-    {{ formset.management_form }}
-    {{ formset.non_form_errors }}
+  {% if not formset.has_parent or is_subinline %}
+    <div class="inline-group" id="{{ formset.prefix }}-group" data-inline-type="stacked" data-prefix="{{ formset.prefix }}" data-remove-text="{% trans "Remove" %}" data-add-text="{% blocktrans with verbose_name=inline.verbose_name|capfirst %}Add another {{ verbose_name }}{% endblocktrans %}">
+      <h2>{{ inline.verbose_name_plural|capfirst }}</h2>
+      {{ formset.management_form }}
+      {{ formset.non_form_errors }}
 
-    {% for inline_admin_form in inline_admin_formset %}
-      {% with original=inline_admin_form.original model_admin=inline_admin_form.model_admin %}
-        <div class="inline-related{% if original or inline_admin_form.show_url %} has_original{% endif %}{% if forloop.last %} empty-form{% endif %}">
-          <h3>
-            <b>{{ inline.verbose_name|capfirst }}:</b>
-            <span class="inline_label">
-              {% if original %}
-                {{ original }}
-                {% if model_admin.show_change_link and model_admin.has_registered_model %}
-                  <a href="{% url model_admin.opts|admin_urlname:'change' original.pk|admin_urlquote %}" class="inlinechangelink">
-                    {% trans "Change" %}
-                  </a>
+      {% for inline_admin_form in inline_admin_formset %}
+        {% with original=inline_admin_form.original model_admin=inline_admin_form.model_admin %}
+          <div class="inline-related{% if original or inline_admin_form.show_url %} has_original{% endif %}{% if forloop.last %} empty-form{% endif %}">
+            <h3>
+              <b>{{ inline.verbose_name|capfirst }}:</b>
+              <span class="inline_label">
+                {% if original %}
+                  {{ original }}
+                  {% if model_admin.show_change_link and model_admin.has_registered_model %}
+                    <a href="{% url model_admin.opts|admin_urlname:'change' original.pk|admin_urlquote %}" class="inlinechangelink">
+                      {% trans "Change" %}
+                    </a>
+                  {% endif %}
+                {% else %}
+                  #{{ forloop.counter }}
                 {% endif %}
-              {% else %}
-                #{{ forloop.counter }}
-              {% endif %}
-            </span>
-            {% if inline_admin_form.show_url %}
-              <a href="{{ inline_admin_form.absolute_url }}">
-                {% trans "View on site" %}
-              </a>
-            {% endif %}
-            {% if formset.can_delete and original %}
-              <span class="delete">
-                {{ inline_admin_form.deletion_field.field }}
-                {{ inline_admin_form.deletion_field.label_tag }}
               </span>
+              {% if inline_admin_form.show_url %}
+                <a href="{{ inline_admin_form.absolute_url }}">
+                  {% trans "View on site" %}
+                </a>
+              {% endif %}
+              {% if formset.can_delete and original %}
+                <span class="delete">
+                  {{ inline_admin_form.deletion_field.field }}
+                  {{ inline_admin_form.deletion_field.label_tag }}
+                </span>
+              {% endif %}
+            </h3>
+            {% if inline_admin_form.form.non_field_errors %}
+              {{ inline_admin_form.form.non_field_errors }}
             {% endif %}
-          </h3>
-          {% if inline_admin_form.form.non_field_errors %}
-            {{ inline_admin_form.form.non_field_errors }}
-          {% endif %}
-          {% for fieldset in inline_admin_form %}
-            {% include "admin/includes/fieldset.html" %}
-          {% endfor %}
-          {% if inline_admin_form.needs_explicit_pk_field %}
-            {{ inline_admin_form.pk_field.field }}
-          {% endif %}
-          {{ inline_admin_form.fk_field.field }}
+            {% for fieldset in inline_admin_form %}
+              {% include "admin/includes/fieldset.html" %}
+            {% endfor %}
+            {% if inline_admin_form.needs_explicit_pk_field %}
+              {{ inline_admin_form.pk_field.field }}
+            {% endif %}
+            {{ inline_admin_form.fk_field.field }}
 
-          {% get_sub_inline_formsets inline as sub_inlines %}
-          {% for sub_inline in sub_inlines %}
-            {% include sub_inline.opts.template with inline_admin_formset=sub_inline is_subinline=True %}
-          {% endfor %}
+            {% get_sub_inline_formsets inline original forloop.counter0 forloop.last as sub_inlines %}
+            {% for sub_inline in sub_inlines %}
+              {% include sub_inline.opts.template with inline_admin_formset=sub_inline is_subinline=True %}
+            {% endfor %}
 
-        </div>
-      {% endwith %}
-    {% endfor %}
-  </div>
+          </div>
+        {% endwith %}
+      {% endfor %}
+    </div>
 
-  {% if not is_subinline %}
-    <script type="text/javascript">
-      (function($) {
-        $("#{{ formset.prefix }}-group").formset();
-      })(django.jQuery);
-    </script>
+    {% if not is_subinline %}
+      <script type="text/javascript">
+        (function($) {
+          $("#{{ formset.prefix }}-group").formset();
+        })(django.jQuery);
+      </script>
+    {% endif %}
   {% endif %}
 {% endwith %}

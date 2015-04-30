@@ -6,22 +6,23 @@
 
   function InlineForm(formset, $row) {
     this.formset = formset;
-    this.index = this.formset.forms.length;
-    this.prefix = this.formset.prefix + '-' + this.index;
+    this.updateIndex(this.formset.forms.length);
     this.formset.forms.push(this);
 
-    if (typeof $row === 'undefined') {
+    this.isInitial = typeof $row !== 'undefined';
+
+    if (this.isInitial) {
+      this.$row = $row;
+      var $idInput = this.$row.find('[name="' + this.prefix + '-id"]');
+      this.hasOriginal = $idInput.val() !== '';
+    } else {
       this.$row = (this.formset.$templateForm.clone(true)
                    .removeClass(this.formset.emptyCssClass)
                    .addClass(this.formset.formCssClass));
-      this.isInitial = false;
-    } else {
-      this.$row = $row;
-      var $idInput = this.$row.find('[name="' + this.prefix + '"]');
-      this.isInitial = $idInput.val() === '';
+      this.hasOriginal = false;
     }
 
-    if (!this.isInitial) {
+    if (!this.hasOriginal) {
       this.createRemoveButton();
     }
 
@@ -33,7 +34,7 @@
     reinitDateTimeShortCuts();
     updateSelectFilter();
 
-    this.$row.find('.inline-group').formset();
+    this.$row.find('.inline-group').formset(this);
   }
 
   InlineForm.prototype.createRemoveButton = function() {
@@ -75,7 +76,7 @@
 
   InlineForm.prototype.fillAttrPlaceholders = function() {
     var $elements = this.$row.find('*').addBack();
-    var idRegex = new RegExp('(' + this.formset.prefix + '-(?:\\d+|__prefix__))');
+    var idRegex = new RegExp('((?:' + this.formset.fullPrefix + '|' + this.formset.prefix + ')-(?:\\d+|__prefix__))');
     var formPrefix = this.prefix;
     $.each(['for', 'id', 'name'], function(i, attrName) {
       $elements.each(function() {
@@ -87,20 +88,49 @@
     });
   };
 
+  InlineForm.prototype.updateIndex = function(index) {
+    this.index = index;
+    this.prefix = this.formset.fullPrefix + '-' + this.index;
+  };
+
+  InlineForm.prototype.updateClass = function() {
+    if (this.index % 2 == 0) {
+      this.$row.addClass('row1').removeClass('row2');
+    } else {
+      this.$row.addClass('row2').removeClass('row1');
+    }
+  };
+
   InlineForm.prototype.updateLabel = function() {
     var $rowLabel = this.$row.find('> h3 > .inline_label');
     $rowLabel.html($rowLabel.html().replace(/(#\d+)/g, '#' + (this.index + 1)));
+  };
+
+  InlineForm.prototype.update = function(index) {
+    this.updateIndex(index);
+    this.fillAttrPlaceholders();
+    if (this.formset.inlineType == 'tabular') {
+      this.updateClass();
+    } else {
+      this.updateLabel();
+    }
   };
 
   //
   // InlineFormSet class
   //
 
-  function InlineFormSet($root) {
+  function InlineFormSet($root, parentInlineForm) {
     this.$root = $root;
+    this.parentInlineForm = parentInlineForm;
     this.inlineType = this.$root.data('inline-type');
 
     this.prefix = this.$root.data('prefix');
+    this.fullPrefix = this.prefix;
+    if (typeof this.parentInlineForm !== 'undefined' && !this.parentInlineForm.isInitial) {
+      this.fullPrefix += '-' + this.parentInlineForm.index;
+    }
+
     this.addCssClass = 'add-row';
     this.removeCssClass = 'inline-deletelink';
     this.emptyCssClass = 'empty-form';
@@ -110,7 +140,11 @@
     this.removeText = this.$root.data('remove-text');
 
     this.$totalForms = this.$root.find('[name="' + this.prefix + '-TOTAL_FORMS"]').attr('autocomplete', 'off');
+    this.$initialForms = this.$root.find('[name="' + this.prefix + '-INITIAL_FORMS"]').attr('autocomplete', 'off');
     this.$maxForms = this.$root.find('[name="' + this.prefix + '-MAX_NUM_FORMS"]').attr('autocomplete', 'off');
+    this.$totalForms.attr('name', this.fullPrefix + '-TOTAL_FORMS');
+    this.$initialForms.attr('name', this.fullPrefix + '-INITIAL_FORMS');
+    this.$maxForms.attr('name', this.fullPrefix + '-MAX_NUM_FORMS');
 
     this.$templateForm = this.getFormsAndTemplate().filter('.' + this.emptyCssClass);
 
@@ -147,18 +181,6 @@
     return this.getFormsAndTemplate().not('.' + this.emptyCssClass)
   };
 
-  InlineFormSet.prototype.updateLabels = function() {
-    this.forms.forEach(function(form) {
-      form.updateLabel();
-    });
-  };
-
-  InlineFormSet.prototype.alternateRows = function() {
-    this.getForms().removeClass('row1 row2')
-      .filter(':even').addClass('row1').end()
-      .filter(':odd').addClass('row2');
-  };
-
   InlineFormSet.prototype.canShowAddButton = function() {
     // Note: if `max_num` is None, $maxForms.val() == ''
     return (this.$maxForms.val() === '')
@@ -172,15 +194,8 @@
 
   InlineFormSet.prototype.update = function() {
     this.forms.forEach(function(form, index) {
-      form.index = index;
-      form.fillAttrPlaceholders();
+      form.update(index);
     });
-
-    if (this.inlineType == 'tabular') {
-      this.alternateRows();
-    } else {
-      this.updateLabels();
-    }
 
     this.$totalForms.val(this.forms.length);
 
@@ -218,8 +233,8 @@
   // jQuery plugin creation
   //
 
-  $.fn.formset = function() {
-    new InlineFormSet(this);
+  $.fn.formset = function(parentInlineForm) {
+    new InlineFormSet(this, parentInlineForm);
     return this;
   };
 

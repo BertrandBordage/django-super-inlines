@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from collections import defaultdict
 
 from django.contrib.admin import helpers
-from django.contrib.admin.options import InlineModelAdmin
+from django.contrib.admin.options import InlineModelAdmin, ModelAdmin
 
 
 class SuperInlineModelAdmin(InlineModelAdmin):
@@ -32,7 +32,7 @@ class SuperInlineModelAdmin(InlineModelAdmin):
         for inline in self.get_inline_instances(request, obj):
             yield inline.get_formset(request, obj), inline
 
-    def _create_formsets(self, request, obj, change):
+    def _create_formsets(self, request, obj, change, index, is_template):
         "Helper function to generate formsets for add/change_view."
         formsets = []
         inline_instances = []
@@ -40,9 +40,12 @@ class SuperInlineModelAdmin(InlineModelAdmin):
         get_formsets_args = [request]
         if change:
             get_formsets_args.append(obj)
+        base_prefix = self.get_formset(request).get_default_prefix()
         for FormSet, inline in self.get_formsets_with_inlines(
                 *get_formsets_args):
-            prefix = FormSet.get_default_prefix()
+            prefix = base_prefix + '-' + FormSet.get_default_prefix()
+            if not is_template:
+                prefix += '-%s' % index
             prefixes[prefix] += 1
             if prefixes[prefix] != 1 or not prefix:
                 prefix = "%s-%s" % (prefix, prefixes[prefix])
@@ -57,7 +60,9 @@ class SuperInlineModelAdmin(InlineModelAdmin):
                     'files': request.FILES,
                     'save_as_new': '_saveasnew' in request.POST
                 })
-            formsets.append(FormSet(**formset_params))
+            formset = FormSet(**formset_params)
+            formset.has_parent = True
+            formsets.append(formset)
             inline_instances.append(inline)
         return formsets, inline_instances
 
@@ -72,3 +77,19 @@ class SuperInlineModelAdmin(InlineModelAdmin):
                 fieldsets, prepopulated, readonly, model_admin=self)
             inline_admin_formsets.append(inline_admin_formset)
         return inline_admin_formsets
+
+
+class SuperModelAdmin(ModelAdmin):
+    def _create_formsets(self, request, obj, change):
+        formsets, inline_instances = super(
+            SuperModelAdmin, self)._create_formsets(request, obj, change)
+        for formset, inline_instance in zip(formsets, inline_instances):
+            if not isinstance(inline_instance, SuperInlineModelAdmin):
+                continue
+            for index, form in enumerate(formset.forms):
+                new_formsets, new_inline_instances = \
+                    inline_instance._create_formsets(request, form.instance,
+                                                     change, index, False)
+                formsets.extend(new_formsets)
+                inline_instances.extend(new_inline_instances)
+        return formsets, inline_instances
