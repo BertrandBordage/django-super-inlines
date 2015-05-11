@@ -9,7 +9,7 @@
 
 {% with inline=inline_admin_formset.opts formset=inline_admin_formset.formset %}
   {% if not formset.has_parent or is_subinline %}
-    <div class="grp-group grp-stacked {% if inline.classes %}{{ inline.classes|join:" " }}{% endif %}" id="{{ formset.prefix }}-group"  data-inline-type="stacked" data-prefix="{{ formset.prefix }}" data-remove-text="{% trans "Remove" %}" data-add-text="{% blocktrans with verbose_name=inline.verbose_name|capfirst %}Add another {{ verbose_name }}{% endblocktrans %}">
+    <div class="grp-group grp-stacked {% if inline.classes %}{{ inline.classes|join:" " }}{% endif %}" id="{{ formset.prefix }}-group"  data-inline-type="stacked" data-prefix="{{ formset.prefix }}" data-remove-text="{% trans "Remove" %}" data-add-text="{% blocktrans with verbose_name=inline.verbose_name|capfirst %}Add another {{ verbose_name }}{% endblocktrans %}" data-related-lookup-fields-fk='{% get_related_lookup_fields_fk inline %}' data-related-lookup-fields-m2m='{% get_related_lookup_fields_m2m inline %}' data-related-lookup-fields-generic='{% get_related_lookup_fields_generic inline %}' data-autocomplete-lookup-fields-fk='{% get_autocomplete_lookup_fields_fk inline %}' data-autocomplete-lookup-fields-m2m='{% get_autocomplete_lookup_fields_m2m inline %}' data-autocomplete-lookup-fields-generic='{% get_autocomplete_lookup_fields_generic inline %}'>
       <h2 class="grp-collapse-handler">{% if inline.title %}{{ inline.title }}{% else %}{{ inline.verbose_name_plural|capfirst }}{% endif %}</h2>
       <ul class="grp-tools">
           <li><a href="javascript://" class="grp-icon grp-open-handler" title="{% trans 'Open All Items' %}"></a></li>
@@ -23,7 +23,7 @@
         {% with sortable_field_name=inline.sortable_field_name|default:'' %}
           {% for inline_admin_form in inline_admin_formset|formsetsort:sortable_field_name %}
             {% with original=inline_admin_form.original model_admin=inline_admin_form.model_admin %}
-              <div class="grp-module {{ inline.inline_classes|join:" "|default:"grp-collapse grp-closed" }}{% if original or inline_admin_form.show_url %} has_original{% endif %}{% if forloop.last %} grp-empty-form{% endif %}" id="{{ formset.prefix }}{% if forloop.last %}-__prefix__{% else %}{{ forloop.counter0 }}{% endif %}">
+              <div class="grp-module {{ inline.inline_classes|join:" "|default:"grp-collapse grp-closed" }}{% if original or inline_admin_form.show_url %} has_original grp-dynamic-form{% endif %}{% if forloop.last %} grp-empty-form{% endif %}" id="{{ formset.prefix }}{% if forloop.last %}-__prefix__{% else %}{{ forloop.counter0 }}{% endif %}">
                 <h3 class="grp-collapse-handler">{{ inline.verbose_name }}&nbsp;&nbsp;{% if original %}{{ original }}{% endif %}</h3>
                 <ul class="grp-tools">
                   {% if inline_admin_form.show_url %}<li><a href="{% url 'admin:view_on_site' inline_admin_form.original_content_type_id original.pk %}" class="grp-icon grp-viewsite-link" title="{% trans 'View on Site' %}" target="_blank"></a></li>{% endif %}
@@ -72,31 +72,30 @@
     </div>
 
 
+    {% if not is_subinline %}
     <script type="text/javascript">
     (function($) {
-        $(document).ready(function() {
-            var prefix = "{{ formset.prefix }}";
-            var related_lookup_fields_fk = {% get_related_lookup_fields_fk inline %};
-            var related_lookup_fields_m2m = {% get_related_lookup_fields_m2m inline %};
-            var related_lookup_fields_generic = {% get_related_lookup_fields_generic inline %};
-            var autocomplete_fields_fk = {% get_autocomplete_lookup_fields_fk inline %};
-            var autocomplete_fields_m2m = {% get_autocomplete_lookup_fields_m2m inline %};
-            var autocomplete_fields_generic = {% get_autocomplete_lookup_fields_generic inline %};
+          function onAfterAdd ($formset, $form, prefix, isInitial) {
+            var related_lookup_fields_fk = $formset.data('related-lookup-fields-fk');
+            var related_lookup_fields_m2m = $formset.data('related-lookup-fields-m2m');
+            var related_lookup_fields_generic = $formset.data('related-lookup-fields-generic');
+            var autocomplete_fields_fk = $formset.data('autocomplete-lookup-fields-fk');
+            var autocomplete_fields_m2m = $formset.data('autocomplete-lookup-fields-m2m');
+            var autocomplete_fields_generic = $formset.data('autocomplete-lookup-fields-generic');
+            grappelli.reinitDateTimeFields($form);
+            grappelli.updateSelectFilter($form);
             $.each(related_lookup_fields_fk, function() {
-                $("#{{ formset.prefix }}-group > div.grp-items > div:not(.grp-empty-form)")
-                .find("input[name^='" + prefix + "'][name$='-" + this + "']")
+                $form.find("input[name^='" + prefix + "'][name$='-" + this + "']")
                 .grp_related_fk({lookup_url:"{% url 'grp_related_lookup' %}"});
             });
             $.each(related_lookup_fields_m2m, function() {
-                $("#{{ formset.prefix }}-group > div.grp-items > div:not(.grp-empty-form)")
-                .find("input[name^='" + prefix + "'][name$='-" + this + "']")
+                $form.find("input[name^='" + prefix + "'][name$='-" + this + "']")
                 .grp_related_m2m({lookup_url:"{% url 'grp_m2m_lookup' %}"});
             });
             $.each(related_lookup_fields_generic, function() {
                 var content_type = this[0],
                     object_id = this[1];
-                $("#{{ formset.prefix }}-group > div.grp-items > div:not(.grp-empty-form)")
-                .find("input[name^='" + prefix + "'][name$='-" + this[1] + "']")
+                $form.find("input[name^='" + prefix + "'][name$='-" + this[1] + "']")
                 .each(function() {
                     var i = $(this).attr("id").match(/-\d+-/);
                     if (i) {
@@ -107,8 +106,7 @@
                 });
             });
             $.each(autocomplete_fields_fk, function() {
-                $("#{{ formset.prefix }}-group > div.grp-items > div:not(.grp-empty-form)")
-                .find("input[name^='" + prefix + "'][name$='-" + this + "']")
+                $form.find("input[name^='" + prefix + "'][name$='-" + this + "']")
                 .each(function() {
                     $(this).grp_autocomplete_fk({
                         lookup_url:"{% url 'grp_related_lookup' %}",
@@ -117,8 +115,7 @@
                 });
             });
             $.each(autocomplete_fields_m2m, function() {
-                $("#{{ formset.prefix }}-group > div.grp-items > div:not(.grp-empty-form)")
-                .find("input[name^='" + prefix + "'][name$='-" + this + "']")
+                $form.find("input[name^='" + prefix + "'][name$='-" + this + "']")
                 .each(function() {
                     $(this).grp_autocomplete_m2m({
                         lookup_url:"{% url 'grp_m2m_lookup' %}",
@@ -129,8 +126,7 @@
             $.each(autocomplete_fields_generic, function() {
                 var content_type = this[0],
                     object_id = this[1];
-                $("#{{ formset.prefix }}-group > div.grp-items > div:not(.grp-empty-form)")
-                .find("input[name^='" + prefix + "'][name$='-" + this[1] + "']")
+                $form.find("input[name^='" + prefix + "'][name$='-" + this[1] + "']")
                 .each(function() {
                     var i = $(this).attr("id").match(/-\d+-/);
                     if (i) {
@@ -145,75 +141,28 @@
                     }
                 });
             });
+            if (isInitial) {
+              $form.find('.grp-delete-handler').bind("click", function() {
+                  var deleteInput = $(this).prev(),
+                      form = $(this).parents('.grp-dynamic-form').first();
+                  if (form.hasClass("has_original")) {
+                      form.toggleClass('grp-predelete');
+                      if (deleteInput.prop("checked")) {
+                          deleteInput.removeAttr("checked");
+                      } else {
+                          deleteInput.prop("checked", true);
+                      }
+                  }
+              });
+            } else {
+              $form.grp_collapsible();
+              $form.find(".grp-collapse").grp_collapsible();
+            }
+          }
 
-            {% if not is_subinline %}
-                $("#{{ formset.prefix }}-group").formset(function(form) {
-                    grappelli.reinitDateTimeFields(form);
-                    grappelli.updateSelectFilter(form);
-                    $.each(related_lookup_fields_fk, function() {
-                        form.find("input[name^='" + prefix + "'][name$='-" + this + "']")
-                        .grp_related_fk({lookup_url:"{% url 'grp_related_lookup' %}"});
-                    });
-                    $.each(related_lookup_fields_m2m, function() {
-                        form.find("input[name^='" + prefix + "'][name$='-" + this + "']")
-                        .grp_related_m2m({lookup_url:"{% url 'grp_m2m_lookup' %}"});
-                    });
-                    $.each(related_lookup_fields_generic, function() {
-                        var content_type = this[0],
-                            object_id = this[1];
-                        form.find("input[name^='" + prefix + "'][name$='-" + this[1] + "']")
-                        .each(function() {
-                            var i = $(this).attr("id").match(/-\d+-/);
-                            if (i) {
-                                var ct_id = "#id_" + prefix + i[0] + content_type,
-                                    obj_id = "#id_" + prefix + i[0] + object_id;
-                                $(this).grp_related_generic({content_type:ct_id, object_id:obj_id, lookup_url:"{% url 'grp_related_lookup' %}"});
-                            }
-                        });
-                    });
-                    $.each(autocomplete_fields_fk, function() {
-                        form.find("input[name^='" + prefix + "'][name$='-" + this + "']")
-                        .each(function() {
-                            $(this).grp_autocomplete_fk({
-                                lookup_url:"{% url 'grp_related_lookup' %}",
-                                autocomplete_lookup_url:"{% url 'grp_autocomplete_lookup' %}"
-                            });
-                        });
-                    });
-                    $.each(autocomplete_fields_m2m, function() {
-                        form.find("input[name^='" + prefix + "'][name$='-" + this + "']")
-                        .each(function() {
-                            $(this).grp_autocomplete_m2m({
-                                lookup_url:"{% url 'grp_m2m_lookup' %}",
-                                autocomplete_lookup_url:"{% url 'grp_autocomplete_lookup' %}"
-                            });
-                        });
-                    });
-                    $.each(autocomplete_fields_generic, function() {
-                        var content_type = this[0],
-                            object_id = this[1];
-                        form.find("input[name^='" + prefix + "'][name$='-" + this[1] + "']")
-                        .each(function() {
-                            var i = $(this).attr("id").match(/-\d+-/);
-                            if (i) {
-                                var ct_id = "#id_" + prefix + i[0] + content_type,
-                                    obj_id = "#id_" + prefix + i[0] + object_id;
-                                $(this).grp_autocomplete_generic({
-                                    content_type:ct_id,
-                                    object_id:obj_id,
-                                    lookup_url:"{% url 'grp_related_lookup' %}",
-                                    autocomplete_lookup_url:"{% url 'grp_autocomplete_lookup' %}"
-                                });
-                            }
-                        });
-                    });
-                    form.grp_collapsible();
-                    form.find(".grp-collapse").grp_collapsible();
-                });
-            {% endif %}
-
-            {% if inline.sortable_field_name %}
-            $("#{{ formset.prefix }}-group > div.grp-items").sortable({
+        function postInit ($formset, prefix) {
+          {% if inline.sortable_field_name %}
+            $formset.find("> div.grp-items").sortable({
                 handle: "a.grp-drag-handler",
                 items: "div.grp-dynamic-form",
                 axis: "y",
@@ -236,7 +185,7 @@
             - It does not cleans up the order field values on change (just like dragging does not do that).
             */
             $.fn.grp_reverse_list = [].reverse;
-            $("#{{ formset.prefix }}-group")
+            $formset
                 .find("div.grp-row.{{ inline.sortable_field_name }} :input")
                 .each(function(i, item) {
                     $(item).bind('change', function(event) {
@@ -262,7 +211,7 @@
                 var sortable_field_name = "{{ inline.sortable_field_name }}",
                     sortable_excludes = {% get_sortable_excludes inline %},
                     i = 0;
-                $("#{{ formset.prefix }}-group").find("div.grp-dynamic-form").each(function(){
+                $formset.find("div.grp-dynamic-form").each(function(){
                     var fields = $(this).find("fieldset :input[type!=radio][type!=checkbox],input:checked,input[type=file]"),
                         submit_values = false,
                         has_value;
@@ -281,11 +230,14 @@
                     }
                 });
             });
-            {% endif %}
+          {% endif %}
+        }
 
-        });
+        $("#{{ formset.prefix }}-group").formset(onAfterAdd, postInit);
+
     })(grp.jQuery);
     </script>
+    {% endif %}
 
   {% endif %}
 {% endwith %}

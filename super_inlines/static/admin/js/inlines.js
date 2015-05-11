@@ -34,9 +34,7 @@
     reinitDateTimeShortCuts();
     updateSelectFilter();
 
-    this.formset.onAfterAdd(this.$row);
-
-    this.$row.find('.inline-group').formset(this.formset.onAfterAdd, this);
+    this.$row.find('.inline-group').formset(this);
   }
 
   InlineForm.prototype.createRemoveButton = function() {
@@ -122,7 +120,7 @@
   // InlineFormSet class
   //
 
-  function InlineFormSet($root, onAfterAdd, parentInlineForm) {
+  function InlineFormSet($root, parentInlineForm) {
     this.$root = $root;
     this.parentInlineForm = parentInlineForm;
     this.inlineType = this.$root.data('inline-type');
@@ -132,11 +130,6 @@
     if (typeof this.parentInlineForm !== 'undefined' && !this.parentInlineForm.isInitial) {
       this.fullPrefix += '-' + this.parentInlineForm.index;
     }
-
-    if (typeof onAfterAdd === 'undefined') {
-      onAfterAdd = function ($row) {};
-    }
-    this.onAfterAdd = onAfterAdd;
 
     this.addCssClass = 'add-row';
     this.removeCssClass = 'inline-deletelink';
@@ -242,8 +235,8 @@
   // jQuery plugin creation
   //
 
-  $.fn.formset = function(onAfterAdd, parentInlineForm) {
-    new InlineFormSet(this, onAfterAdd, parentInlineForm);
+  $.fn.formset = function(parentInlineForm) {
+    new InlineFormSet(this, parentInlineForm);
     return this;
   };
 

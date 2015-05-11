@@ -32,9 +32,9 @@
 
     this.initPrepopulatedFields();
 
-    this.formset.onAfterAdd(this.$row);
+    this.formset.onAfterAdd(this.formset.$root, this.$row, this.formset.fullPrefix, this.isInitial);
 
-    this.$row.find('.grp-group').formset(this.formset.onAfterAdd, this);
+    this.$row.find('.grp-group').formset(this.formset.onAfterAdd, this.formset.postInit, this);
   }
 
   InlineForm.prototype.createRemoveButton = function() {
@@ -92,7 +92,7 @@
   // InlineFormSet class
   //
 
-  function InlineFormSet($root, onAfterAdd, parentInlineForm) {
+  function InlineFormSet($root, onAfterAdd, postInit, parentInlineForm) {
     this.$root = $root;
     this.parentInlineForm = parentInlineForm;
     this.inlineType = this.$root.data('inline-type');
@@ -104,9 +104,13 @@
     }
 
     if (typeof onAfterAdd === 'undefined') {
-      onAfterAdd = function ($row) {};
+      onAfterAdd = function ($form, prefix) {};
     }
     this.onAfterAdd = onAfterAdd;
+    if (typeof postInit === 'undefined') {
+      postInit = function ($formset, prefix) {};
+    }
+    this.postInit = postInit;
 
     this.addCssClass = 'grp-add-handler';
     this.removeCssClass = 'grp-remove-handler';
@@ -135,6 +139,8 @@
     }.bind(this));
 
     this.$addButton.click(this.addHandler.bind(this));
+
+    this.postInit($root, this.fullPrefix);
   }
 
   InlineFormSet.prototype.getFormsAndTemplate = function() {
@@ -175,8 +181,8 @@
   // jQuery plugin creation
   //
 
-  $.fn.formset = function(onAfterAdd, parentInlineForm) {
-    new InlineFormSet(this, onAfterAdd, parentInlineForm);
+  $.fn.formset = function(onAfterAdd, postInit, parentInlineForm) {
+    new InlineFormSet(this, onAfterAdd, postInit, parentInlineForm);
     return this;
   };
 
