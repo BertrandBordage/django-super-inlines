@@ -31,26 +31,14 @@
     this.formset.update();
 
     this.initPrepopulatedFields();
-    reinitDateTimeShortCuts();
-    updateSelectFilter();
 
     this.formset.onAfterAdd(this.$row);
 
-    this.$row.find('.inline-group').formset(this.formset.onAfterAdd, this);
+    this.$row.find('.grp-group').formset(this.formset.onAfterAdd, this);
   }
 
   InlineForm.prototype.createRemoveButton = function() {
-    this.$removeButton = $('<a class="' + this.formset.removeCssClass +'" href="#">' + this.formset.removeText + '</a>');
-
-    if (this.formset.inlineType == 'tabular') {
-      this.$removeButtonContainer = $('<div></div>');
-      this.$row.children(':last').append(this.$removeButtonContainer);
-    } else {
-      this.$removeButtonContainer = $('<span></span>');
-      this.$row.children(':first').append(this.$removeButtonContainer);
-    }
-
-    this.$removeButtonContainer.append(this.$removeButton);
+    this.$removeButton = this.$row.find('.' + this.formset.removeCssClass);
     this.$removeButton.click(this.removeHandler.bind(this));
   };
 
@@ -95,27 +83,9 @@
     this.prefix = this.formset.fullPrefix + '-' + this.index;
   };
 
-  InlineForm.prototype.updateClass = function() {
-    if (this.index % 2 == 0) {
-      this.$row.addClass('row1').removeClass('row2');
-    } else {
-      this.$row.addClass('row2').removeClass('row1');
-    }
-  };
-
-  InlineForm.prototype.updateLabel = function() {
-    var $rowLabel = this.$row.find('> h3 > .inline_label');
-    $rowLabel.html($rowLabel.html().replace(/(#\d+)/g, '#' + (this.index + 1)));
-  };
-
   InlineForm.prototype.update = function(index) {
     this.updateIndex(index);
     this.fillAttrPlaceholders();
-    if (this.formset.inlineType == 'tabular') {
-      this.updateClass();
-    } else {
-      this.updateLabel();
-    }
   };
 
   //
@@ -138,10 +108,10 @@
     }
     this.onAfterAdd = onAfterAdd;
 
-    this.addCssClass = 'add-row';
-    this.removeCssClass = 'inline-deletelink';
-    this.emptyCssClass = 'empty-form';
-    this.formCssClass = 'dynamic-' + this.prefix;
+    this.addCssClass = 'grp-add-handler';
+    this.removeCssClass = 'grp-remove-handler';
+    this.emptyCssClass = 'grp-empty-form';
+    this.formCssClass = 'grp-dynamic-form';
 
     this.addText = this.$root.data('add-text');
     this.removeText = this.$root.data('remove-text');
@@ -155,17 +125,8 @@
 
     this.$templateForm = this.getFormsAndTemplate().filter('.' + this.emptyCssClass);
 
-    this.$addButton = $('<a href="#">' + this.addText + '</a>');
-
-    if (this.inlineType == 'tabular') {
-      var numCols = this.$templateForm.children().length;
-      this.$addButtonContainer = $('<tr class="' + this.addCssClass + '"><td colspan="' + numCols + '"></td></tr>');
-      this.$addButtonContainer.find('td').append(this.$addButton);
-    } else {
-      this.$addButtonContainer = $('<div class="' + this.addCssClass + '"></div>');
-      this.$addButtonContainer.append(this.$addButton);
-    }
-    this.$templateForm.after(this.$addButtonContainer);
+    this.$addButton = this.$root.find('> .grp-transparent, > .grp-tools').find('.' + this.addCssClass);
+    this.$addButtonContainer = this.$addButton.parents('.grp-transparent');
 
     this.forms = [];
     // Adds already existing forms
@@ -177,11 +138,10 @@
   }
 
   InlineFormSet.prototype.getFormsAndTemplate = function() {
-    var $rows = this.$root.find('> .inline-related');
     if (this.inlineType == 'tabular') {
-      return $rows.find('> fieldset > table > tbody > .form-row');
+      return this.$root.find('> .grp-table > .grp-tbody');
     }
-    return $rows;
+    return this.$root.find('> .grp-items > .grp-module');
   };
 
   InlineFormSet.prototype.getForms = function() {
@@ -212,33 +172,6 @@
   };
 
   //
-  // Utilities
-  //
-
-  function reinitDateTimeShortCuts() {
-    // Reinitialize the calendar and clock widgets by force
-    if (typeof DateTimeShortcuts !== 'undefined') {
-      $('.datetimeshortcuts').remove();
-      DateTimeShortcuts.init();
-    }
-  }
-
-  function updateSelectFilter() {
-    // If any SelectFilter widgets are a part of the new form,
-    // instantiate a new SelectFilter instance for it.
-    if (typeof SelectFilter !== 'undefined'){
-      function inner(bool){
-        return function() {
-          var namearr = this.name.split('-');
-          SelectFilter.init(this.id, namearr[namearr.length-1], bool);
-        };
-      }
-      $('.selectfilter').each(inner(false));
-      $('.selectfilterstacked').each(inner(true));
-    }
-  }
-
-  //
   // jQuery plugin creation
   //
 
@@ -247,4 +180,4 @@
     return this;
   };
 
-})(django.jQuery);
+})(grp.jQuery);
