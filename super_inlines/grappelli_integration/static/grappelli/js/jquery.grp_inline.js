@@ -22,7 +22,20 @@
       this.hasOriginal = false;
     }
 
-    if (!this.hasOriginal) {
+    if (this.formset.inlineType == 'tabular') {
+      this.$tools = this.$row.find('> .grp-tr > .grp-tools-container > .grp-tools');
+    } else {
+      this.$tools = this.$row.find('> .grp-tools');
+    }
+
+    if (this.hasOriginal) {
+      this.$deletebutton = this.$tools.find('.grp-delete-handler');
+      this.$deletebutton.bind("click", function() {
+        var $deleteInput = this.$deletebutton.prev();
+        $deleteInput.attr('checked', !$deleteInput.attr('checked'));
+        this.$row.toggleClass('grp-predelete');
+      }.bind(this));
+    } else {
       this.createRemoveButton();
     }
 
@@ -38,7 +51,7 @@
   }
 
   InlineForm.prototype.createRemoveButton = function() {
-    this.$removeButton = this.$row.find('.' + this.formset.removeCssClass);
+    this.$removeButton = this.$tools.find('.' + this.formset.removeCssClass);
     this.$removeButton.click(this.removeHandler.bind(this));
   };
 

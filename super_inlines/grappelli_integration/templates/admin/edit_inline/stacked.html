@@ -141,20 +141,7 @@
                     }
                 });
             });
-            if (isInitial) {
-              $form.find('.grp-delete-handler').bind("click", function() {
-                  var deleteInput = $(this).prev(),
-                      form = $(this).parents('.grp-dynamic-form').first();
-                  if (form.hasClass("has_original")) {
-                      form.toggleClass('grp-predelete');
-                      if (deleteInput.prop("checked")) {
-                          deleteInput.removeAttr("checked");
-                      } else {
-                          deleteInput.prop("checked", true);
-                      }
-                  }
-              });
-            } else {
+            if (!isInitial) {
               $form.grp_collapsible();
               $form.find(".grp-collapse").grp_collapsible();
             }
