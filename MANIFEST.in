@@ -1,2 +1,2 @@
 include README.rst LICENSE requirements.txt
-recursive-include super_inlines *.html
+recursive-include super_inlines *.html *.js
