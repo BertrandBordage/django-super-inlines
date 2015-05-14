@@ -34,7 +34,9 @@
     reinitDateTimeShortCuts();
     updateSelectFilter();
 
-    this.$row.find('.inline-group').formset(this);
+    this.$row.find('.inline-group').each(function (_, subFormset) {
+      $(subFormset).formset(this);
+    }.bind(this));
   }
 
   InlineForm.prototype.createRemoveButton = function() {

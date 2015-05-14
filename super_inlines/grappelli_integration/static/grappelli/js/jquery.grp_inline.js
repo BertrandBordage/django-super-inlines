@@ -47,7 +47,9 @@
 
     this.formset.onAfterAdd(this.formset.$root, this.$row, this.formset.fullPrefix, this.isInitial);
 
-    this.$row.find('.grp-group').formset(this.formset.onAfterAdd, this.formset.postInit, this);
+    this.$row.find('.grp-group').each(function (_, subFormset) {
+      $(subFormset).formset(this.formset.onAfterAdd, this.formset.postInit, this);
+    }.bind(this));
   }
 
   InlineForm.prototype.createRemoveButton = function() {
