@@ -12,9 +12,9 @@ But I also plan to add other features I developed for my own projects.
 Usage
 -----
 
-It’s only compatible with Django 1.7 (I tested) and probably 1.8.
+It’s only compatible with Django 1.7.2 to 1.7.8 (I tested) and probably 1.8.
 Don’t even try with previous versions, django-super-inlines relies on changes
-that happened between 1.6 and 1.7.
+that happened between 1.6 and 1.7.2.
 
 For design reasons, you can’t nest inlines inside tabular inlines,
 only inside stacked inlines.
