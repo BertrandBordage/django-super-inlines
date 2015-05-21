@@ -90,6 +90,13 @@ class SuperModelAdmin(ModelAdmin):
                 new_formsets, new_inline_instances = \
                     inline_instance._create_formsets(request, form.instance,
                                                      change, index, False)
+                # If an empty inline form has non-empty sub-inline instances,
+                # we force the save of that empty inline, so that it will be
+                # validated.
+                if any(new_form.has_changed() for new_formset in new_formsets
+                       for new_form in new_formset):
+                    form.has_changed = lambda: True
+
                 formsets.extend(new_formsets)
                 inline_instances.extend(new_inline_instances)
         return formsets, inline_instances
