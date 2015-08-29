@@ -20,7 +20,7 @@ For design reasons, you can’t nest inlines inside tabular inlines,
 only inside stacked inlines.
 
 1. `pip install django-super-inlines`
-2. Add ``'super_inlines',`` to ``INSTALED_APPS``
+2. Add ``'super_inlines',`` to ``INSTALLED_APPS``
    **before** ``'django.contrib.admin',``
 3. If you use django-grappelli, add ``'super_inlines.grappelli_integration',``
    to ``INSTALLED_APPS`` **before** ``'grappelli',``
