@@ -23,7 +23,7 @@ only inside stacked inlines.
 2. Add ``'super_inlines',`` to ``INSTALLED_APPS``
    **before** ``'django.contrib.admin',``
 3. If you use django-grappelli, add ``'super_inlines.grappelli_integration',``
-   to ``INSTALLED_APPS`` **before** ``'grappelli',``
+   to ``INSTALLED_APPS`` **before** ``'grappelli',`` and ``'super_inlines',``
 4. Inherit from ``SuperModelAdmin`` instead of ``ModelAdmin``,
    ``SuperInlineModelAdmin`` instead of ``InlineModelAdmin``, and use the class
    attribute ``inlines`` in inlines as you do in model admins
