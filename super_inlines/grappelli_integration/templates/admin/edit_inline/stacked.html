@@ -9,7 +9,7 @@
 
 {% with inline=inline_admin_formset.opts formset=inline_admin_formset.formset %}
   {% if not formset.has_parent or is_subinline %}
-    <div class="grp-group grp-stacked {% if inline.classes %}{{ inline.classes|join:" " }}{% endif %}" id="{{ formset.prefix }}-group"  data-inline-type="stacked" data-prefix="{{ formset.prefix }}" data-remove-text="{% trans "Remove" %}" data-add-text="{% blocktrans with verbose_name=inline.verbose_name|capfirst %}Add another {{ verbose_name }}{% endblocktrans %}" data-related-lookup-fields-fk='{% get_related_lookup_fields_fk inline %}' data-related-lookup-fields-m2m='{% get_related_lookup_fields_m2m inline %}' data-related-lookup-fields-generic='{% get_related_lookup_fields_generic inline %}' data-autocomplete-lookup-fields-fk='{% get_autocomplete_lookup_fields_fk inline %}' data-autocomplete-lookup-fields-m2m='{% get_autocomplete_lookup_fields_m2m inline %}' data-autocomplete-lookup-fields-generic='{% get_autocomplete_lookup_fields_generic inline %}'>
+    <div class="inline-group grp-group grp-stacked {% if inline.classes %}{{ inline.classes|join:" " }}{% endif %}" id="{{ formset.prefix }}-group"  data-inline-type="stacked" data-prefix="{{ formset.prefix }}" data-remove-text="{% trans "Remove" %}" data-add-text="{% blocktrans with verbose_name=inline.verbose_name|capfirst %}Add another {{ verbose_name }}{% endblocktrans %}" data-related-lookup-fields-fk='{% get_related_lookup_fields_fk inline %}' data-related-lookup-fields-m2m='{% get_related_lookup_fields_m2m inline %}' data-related-lookup-fields-generic='{% get_related_lookup_fields_generic inline %}' data-autocomplete-lookup-fields-fk='{% get_autocomplete_lookup_fields_fk inline %}' data-autocomplete-lookup-fields-m2m='{% get_autocomplete_lookup_fields_m2m inline %}' data-autocomplete-lookup-fields-generic='{% get_autocomplete_lookup_fields_generic inline %}'>
       <h2 class="grp-collapse-handler">{% if inline.title %}{{ inline.title }}{% else %}{{ inline.verbose_name_plural|capfirst }}{% endif %}</h2>
       <ul class="grp-tools">
           <li><a href="javascript://" class="grp-icon grp-open-handler" title="{% trans 'Open All Items' %}"></a></li>
@@ -23,10 +23,15 @@
         {% with sortable_field_name=inline.sortable_field_name|default:'' %}
           {% for inline_admin_form in inline_admin_formset|formsetsort:sortable_field_name %}
             {% with original=inline_admin_form.original model_admin=inline_admin_form.model_admin %}
-              <div class="grp-module {{ inline.inline_classes|join:" "|default:"grp-collapse grp-closed" }}{% if original or inline_admin_form.show_url %} has_original grp-dynamic-form{% endif %}{% if forloop.last %} grp-empty-form{% endif %}" id="{{ formset.prefix }}{% if forloop.last %}-__prefix__{% else %}{{ forloop.counter0 }}{% endif %}">
+              <div class="inline-related grp-module {{ inline.inline_classes|join:" "|default:"grp-collapse grp-closed" }}{% if original or inline_admin_form.show_url %} has_original grp-dynamic-form{% endif %}{% if forloop.last %} grp-empty-form{% endif %}" id="{{ formset.prefix }}{% if forloop.last %}-__prefix__{% else %}{{ forloop.counter0 }}{% endif %}">
                 <h3 class="grp-collapse-handler">{{ inline.verbose_name }}&nbsp;&nbsp;{% if original %}{{ original }}{% endif %}</h3>
                 <ul class="grp-tools">
-                  {% if inline_admin_form.show_url %}<li><a href="{% url 'admin:view_on_site' inline_admin_form.original_content_type_id original.pk %}" class="grp-icon grp-viewsite-link" title="{% trans 'View on Site' %}" target="_blank"></a></li>{% endif %}
+                  {% if inline_admin_form.original %}
+                    {% if inline_admin_form.model_admin.show_change_link and inline_admin_form.model_admin.has_registered_model %}
+                        <li><a href="{% url inline_admin_form.model_admin.opts|admin_urlname:'change' inline_admin_form.original.pk|admin_urlquote %}" class="grp-icon grp-edit-link" title="{% trans 'Change' %}"></a></li>
+                    {% endif %}
+                  {% endif %}
+                  {% if inline_admin_form.show_url %}<li><a href="{{ inline_admin_form.absolute_url }}" class="grp-icon grp-viewsite-link" title="{% trans 'View on Site' %}" target="_blank"></a></li>{% endif %}
                   {% if inline.sortable_field_name %}
                     <li><a href="javascript://" class="grp-icon grp-drag-handler" title="{% trans 'Move Item' %}"></a></li>
                   {% endif %}
@@ -97,10 +102,10 @@
                     object_id = this[1];
                 $form.find("input[name^='" + prefix + "'][name$='-" + this[1] + "']")
                 .each(function() {
-                    var i = $(this).attr("id").match(/-\d+-/);
+                    var i = $(this).attr("id").match(/(?:-\d+)?(-\d+-)/);
                     if (i) {
-                        var ct_id = "#id_" + prefix + i[0] + content_type,
-                            obj_id = "#id_" + prefix + i[0] + object_id;
+                        var ct_id = "#id_" + prefix + i[1] + content_type,
+                            obj_id = "#id_" + prefix + i[1] + object_id;
                         $(this).grp_related_generic({content_type:ct_id, object_id:obj_id, lookup_url:"{% url 'grp_related_lookup' %}"});
                     }
                 });
@@ -128,10 +133,10 @@
                     object_id = this[1];
                 $form.find("input[name^='" + prefix + "'][name$='-" + this[1] + "']")
                 .each(function() {
-                    var i = $(this).attr("id").match(/-\d+-/);
+                    var i = $(this).attr("id").match(/(?:-\d+)?(-\d+-)/);
                     if (i) {
-                        var ct_id = "#id_" + prefix + i[0] + content_type,
-                            obj_id = "#id_" + prefix + i[0] + object_id;
+                        var ct_id = "#id_" + prefix + i[1] + content_type,
+                            obj_id = "#id_" + prefix + i[1] + object_id;
                         $(this).grp_autocomplete_generic({
                             content_type:ct_id,
                             object_id:obj_id,
@@ -212,7 +217,7 @@
                         }
                     });
                     if (submit_values) {
-                        $(this).find("input[name$='"+sortable_field_name+"']").val(i);
+                        $(this).find("input[name$='-"+sortable_field_name+"']").val(i);
                         i++;
                     }
                 });
