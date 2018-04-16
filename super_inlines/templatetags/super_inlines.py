@@ -9,7 +9,7 @@ from ..admin import SuperInlineModelAdmin
 register = Library()
 
 
-@register.assignment_tag(takes_context=True)
+@register.simple_tag(takes_context=True)
 def get_sub_inline_formsets(context, inline, original, index, is_template):
     if not isinstance(inline, SuperInlineModelAdmin):
         return ()
