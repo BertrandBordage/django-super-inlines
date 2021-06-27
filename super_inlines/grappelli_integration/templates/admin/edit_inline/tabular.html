@@ -1,4 +1,4 @@
-{% load i18n admin_urls admin_static admin_modify grp_tags %}
+{% load i18n admin_urls static admin_modify grp_tags %}
 
 {% with inline=inline_admin_formset.opts formset=inline_admin_formset.formset %}
   {% if not formset.has_parent or is_subinline %}
